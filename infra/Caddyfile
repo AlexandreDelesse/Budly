@@ -1,0 +1,16 @@
+# Replace with your actual domain
+budly.example.com {
+
+  basicauth {
+    # Generate with: caddy hash-password
+    # admin $2a$14$<hash>
+  }
+
+  handle /api/* {
+    reverse_proxy backend:3001
+  }
+
+  handle {
+    reverse_proxy frontend:80
+  }
+}
