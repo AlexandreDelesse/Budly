@@ -1,7 +1,15 @@
-# Local development overrides — not committed to production deployments.
-# docker compose up  ← automatically merges this file.
+# Overrides locaux — fusionnés automatiquement par `docker compose up`
+# Ne pas committer en production.
 
 services:
   postgres:
+    # Expose postgres sur localhost pour les outils DB locaux (DBeaver, TablePlus…)
     ports:
       - "5432:5432"
+
+  caddy:
+    # Utilise la config HTTP simple sans domaine ni TLS
+    volumes:
+      - ./infra/Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config

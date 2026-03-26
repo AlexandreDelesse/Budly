@@ -1,0 +1,12 @@
+# Configuration locale — HTTP uniquement, pas d'auth, pas de TLS
+# Accès : http://localhost
+
+:80 {
+  handle /api/* {
+    reverse_proxy backend:3001
+  }
+
+  handle {
+    reverse_proxy frontend:80
+  }
+}
