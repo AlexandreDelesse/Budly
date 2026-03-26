@@ -5,8 +5,8 @@ build/
 *.env.local
 .DS_Store
 
-# Prisma
-packages/backend/prisma/migrations/
+# Prisma (keep migrations in git for production deploys)
+# packages/backend/prisma/migrations/
 
 # Vite
 packages/frontend/dist/

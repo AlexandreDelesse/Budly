@@ -27,21 +27,15 @@ const NAV_ITEMS = [
 
 interface SidebarProps {
   width: number
+  isMobile: boolean
+  mobileOpen: boolean
+  onMobileClose: () => void
 }
 
-export default function Sidebar({ width }: SidebarProps) {
+function NavContent({ onNavigate }: { onNavigate: (path: string) => void }) {
   const location = useLocation()
-  const navigate = useNavigate()
-
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': { width, boxSizing: 'border-box' },
-      }}
-    >
+    <>
       <Box sx={{ p: 2, pb: 1 }}>
         <Typography variant="h6" fontWeight="bold" color="primary">
           Budly
@@ -52,7 +46,7 @@ export default function Sidebar({ width }: SidebarProps) {
           <ListItem key={path} disablePadding>
             <ListItemButton
               selected={location.pathname === path}
-              onClick={() => navigate(path)}
+              onClick={() => onNavigate(path)}
               sx={{ borderRadius: 1, mx: 1 }}
             >
               <ListItemIcon sx={{ minWidth: 36 }}>{icon}</ListItemIcon>
@@ -61,6 +55,42 @@ export default function Sidebar({ width }: SidebarProps) {
           </ListItem>
         ))}
       </List>
+    </>
+  )
+}
+
+export default function Sidebar({ width, isMobile, mobileOpen, onMobileClose }: SidebarProps) {
+  const navigate = useNavigate()
+
+  function handleNavigate(path: string) {
+    navigate(path)
+    if (isMobile) onMobileClose()
+  }
+
+  if (isMobile) {
+    return (
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{ '& .MuiDrawer-paper': { width, boxSizing: 'border-box' } }}
+      >
+        <NavContent onNavigate={handleNavigate} />
+      </Drawer>
+    )
+  }
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': { width, boxSizing: 'border-box' },
+      }}
+    >
+      <NavContent onNavigate={handleNavigate} />
     </Drawer>
   )
 }

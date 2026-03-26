@@ -1,0 +1,7 @@
+# Local development overrides — not committed to production deployments.
+# docker compose up  ← automatically merges this file.
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"

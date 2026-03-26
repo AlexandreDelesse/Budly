@@ -12,8 +12,16 @@ import TrendsPage from './pages/Trends/TrendsPage'
 import BudgetsPage from './pages/Budgets/BudgetsPage'
 import SimulatorPage from './pages/Simulator/SimulatorPage'
 import ProjectionPage from './pages/Projection/ProjectionPage'
+import NotFoundPage from './pages/NotFoundPage'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 export default function App() {
   return (
@@ -32,6 +40,7 @@ export default function App() {
                 <Route path="/budgets" element={<BudgetsPage />} />
                 <Route path="/simulator" element={<SimulatorPage />} />
                 <Route path="/projection" element={<ProjectionPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
           </BrowserRouter>

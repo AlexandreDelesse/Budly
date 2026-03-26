@@ -1,16 +1,37 @@
-# Replace with your actual domain
+# Replace budly.example.com with your actual domain.
+#
+# Generate a password hash for basicauth:
+#   docker run --rm caddy:2-alpine caddy hash-password
+# Then replace the placeholder hash below.
+
 budly.example.com {
 
-  basicauth {
-    # Generate with: caddy hash-password
-    # admin $2a$14$<hash>
+  basicauth * {
+    # Format: <username> <bcrypt-hash>
+    admin $2a$14$REPLACE_WITH_REAL_HASH
   }
 
+  # API requests → backend
   handle /api/* {
     reverse_proxy backend:3001
   }
 
+  # Everything else → React SPA (Nginx serves try_files fallback)
   handle {
     reverse_proxy frontend:80
+  }
+
+  # Security headers
+  header {
+    X-Frame-Options DENY
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+
+  # Access log
+  log {
+    output stderr
+    format console
   }
 }
