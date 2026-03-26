@@ -51,6 +51,14 @@ const BANK_FORMATS: BankFormat[] = [
     dateFormat: 'DD/MM/YYYY',
   },
   {
+    name: 'BoursoBank',
+    delimiter: ';',
+    dateCol: 'dateOp',
+    labelCol: 'label',
+    amountCol: 'amount',
+    dateFormat: 'YYYY-MM-DD',
+  },
+  {
     name: 'Generic CSV',
     delimiter: ',',
     dateCol: 'date',
