@@ -2,6 +2,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 COPY package.json ./
 RUN npm install
 
@@ -16,6 +18,8 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 COPY package.json ./
 RUN npm install --omit=dev
 
@@ -25,6 +29,4 @@ COPY prisma ./prisma
 
 EXPOSE 3001
 
-# prisma db push : applique le schéma sans fichiers de migration (dev local + première mise en prod)
-# Pour la prod avec historique de migrations : remplacer par `npx prisma migrate deploy`
 CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/index.js"]
