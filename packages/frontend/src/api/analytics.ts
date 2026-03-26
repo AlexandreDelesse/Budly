@@ -52,3 +52,46 @@ export async function fetchTrends(months: number, categoryIds?: string[]): Promi
   })
   return data
 }
+
+export interface SimulatorData {
+  categoryId: string
+  categoryName: string
+  categoryColor: string
+  currentMonthlyAvg: number
+  targetAmount: number
+  monthlySaving: number
+  yearlySaving: number
+  history: { month: string; actual: number }[]
+}
+
+export async function fetchSimulator(categoryId: string, targetAmount: number): Promise<SimulatorData> {
+  const { data } = await client.get<SimulatorData>('/analytics/simulator', {
+    params: { categoryId, targetAmount },
+  })
+  return data
+}
+
+export interface ProjectionDay {
+  date: string
+  balance: number
+}
+
+export interface ScheduledFixed {
+  merchantName: string
+  amount: number
+  expectedDate: string
+}
+
+export interface ProjectionData {
+  currentBalance: number
+  days: ProjectionDay[]
+  endOfMonthBalance: number
+  scheduledFixed: ScheduledFixed[]
+}
+
+export async function fetchProjection(fromDate: string): Promise<ProjectionData> {
+  const { data } = await client.get<ProjectionData>('/analytics/projection', {
+    params: { fromDate },
+  })
+  return data
+}
