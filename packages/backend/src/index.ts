@@ -6,6 +6,7 @@ import categoriesRouter from './modules/categories/categories.router'
 import merchantsRouter from './modules/merchants/merchants.router'
 import transactionsRouter from './modules/transactions/transactions.router'
 import analyticsRouter from './modules/analytics/analytics.router'
+import budgetsRouter from './modules/budgets/budgets.router'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -22,6 +23,7 @@ app.use('/api/categories', categoriesRouter)
 app.use('/api/merchants', merchantsRouter)
 app.use('/api/transactions', transactionsRouter)
 app.use('/api/analytics', analyticsRouter)
+app.use('/api/budgets', budgetsRouter)
 
 app.use(errorHandler)
 
