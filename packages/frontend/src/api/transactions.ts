@@ -1,6 +1,13 @@
 import client from './client'
 import type { Category } from './categories'
 import type { ExpenseType } from './merchants'
+import type { Tag } from './tags'
+
+export interface TransactionTag {
+  transactionId: string
+  tagId: string
+  tag: Tag
+}
 
 export interface Transaction {
   id: string
@@ -12,8 +19,10 @@ export interface Transaction {
   categoryId: string | null
   expenseType: ExpenseType
   isManual: boolean
+  note: string | null
   merchant: { id: string; name: string; displayName: string | null } | null
   category: Category | null
+  tags: TransactionTag[]
 }
 
 export interface TransactionsPage {
@@ -27,6 +36,7 @@ export async function fetchTransactions(params: {
   month?: string
   categoryId?: string
   uncategorized?: boolean
+  merchantId?: string
   page?: number
   limit?: number
 }): Promise<TransactionsPage> {
@@ -36,7 +46,7 @@ export async function fetchTransactions(params: {
 
 export async function patchTransaction(
   id: string,
-  body: { categoryId?: string | null; expenseType?: ExpenseType }
+  body: { categoryId?: string | null; expenseType?: ExpenseType; note?: string; tagIds?: string[] }
 ): Promise<Transaction> {
   const { data } = await client.patch<Transaction>(`/transactions/${id}`, body)
   return data

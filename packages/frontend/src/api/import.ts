@@ -13,6 +13,19 @@ export interface ImportBatch {
   importedCount: number
   skippedCount: number
   createdAt: string
+  _count?: { duplicates: number }
+}
+
+export interface DuplicateCandidate {
+  id: string
+  fingerprint: string
+  date: string
+  label: string
+  amount: string
+  importBatchId: string
+  status: 'PENDING' | 'KEPT' | 'IGNORED'
+  createdAt: string
+  importBatch: { filename: string }
 }
 
 export async function uploadCsv(
@@ -36,4 +49,19 @@ export async function uploadCsv(
 export async function fetchBatches(): Promise<ImportBatch[]> {
   const { data } = await client.get<ImportBatch[]>('/import/batches')
   return data
+}
+
+export async function fetchDuplicates(batchId?: string): Promise<DuplicateCandidate[]> {
+  const { data } = await client.get<DuplicateCandidate[]>('/import/duplicates', {
+    params: batchId ? { batchId } : {},
+  })
+  return data
+}
+
+export async function keepDuplicate(id: string): Promise<void> {
+  await client.post(`/import/duplicates/${id}/keep`)
+}
+
+export async function ignoreDuplicate(id: string): Promise<void> {
+  await client.post(`/import/duplicates/${id}/ignore`)
 }

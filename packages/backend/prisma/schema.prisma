@@ -17,6 +17,12 @@ enum ExpenseType {
   UNKNOWN
 }
 
+enum DuplicateStatus {
+  PENDING
+  KEPT
+  IGNORED
+}
+
 // ─── Categories ──────────────────────────────────────────────────────────────
 
 model Category {
@@ -65,11 +71,15 @@ model Transaction {
   expenseType ExpenseType @default(UNKNOWN)
   isManual    Boolean     @default(false) // manually added vs imported
 
+  note String? // free-form user annotation
+
   // Dedup key: SHA-256 of (date + amount + label)
   fingerprint String @unique
 
   importBatchId String?
   importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id])
+
+  tags TransactionTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,6 +87,26 @@ model Transaction {
   @@index([date])
   @@index([categoryId])
   @@index([merchantId])
+}
+
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  color        String           @default("#9E9E9E")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  transactions TransactionTag[]
+}
+
+model TransactionTag {
+  transactionId String
+  tagId         String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
 }
 
 // ─── Import Batches ───────────────────────────────────────────────────────────
@@ -90,6 +120,25 @@ model ImportBatch {
   createdAt     DateTime @default(now())
 
   transactions Transaction[]
+  duplicates   DuplicateCandidate[]
+}
+
+// ─── Duplicate Candidates ────────────────────────────────────────────────────
+
+model DuplicateCandidate {
+  id            String          @id @default(cuid())
+  fingerprint   String
+  date          DateTime
+  label         String
+  amount        Decimal         @db.Decimal(12, 2)
+  importBatchId String
+  importBatch   ImportBatch     @relation(fields: [importBatchId], references: [id])
+  status        DuplicateStatus @default(PENDING)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([importBatchId])
+  @@index([status])
 }
 
 // ─── Budgets ──────────────────────────────────────────────────────────────────

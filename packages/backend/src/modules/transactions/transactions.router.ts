@@ -7,6 +7,8 @@ const router = Router()
 const TransactionPatch = z.object({
   categoryId: z.string().nullable().optional(),
   expenseType: z.enum(['FIXED_RECURRING', 'VARIABLE_RECURRING', 'ONE_TIME', 'UNKNOWN']).optional(),
+  note: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
 })
 
 // GET /api/transactions/uncategorized/grouped
@@ -75,7 +77,7 @@ router.get('/uncategorized/grouped', async (_req, res, next) => {
 // GET /api/transactions
 router.get('/', async (req, res, next) => {
   try {
-    const { month, categoryId, uncategorized, page = '1', limit = '50' } = req.query as Record<string, string>
+    const { month, categoryId, uncategorized, merchantId, page = '1', limit = '50' } = req.query as Record<string, string>
 
     const where: Record<string, unknown> = {}
 
@@ -88,6 +90,7 @@ router.get('/', async (req, res, next) => {
     }
     if (categoryId) where.categoryId = categoryId
     if (uncategorized === 'true') where.categoryId = null
+    if (merchantId) where.merchantId = merchantId
 
     const skip = (parseInt(page) - 1) * parseInt(limit)
 
@@ -97,6 +100,7 @@ router.get('/', async (req, res, next) => {
         include: {
           merchant: { select: { id: true, name: true, displayName: true } },
           category: { select: { id: true, name: true, color: true, icon: true } },
+          tags: { include: { tag: true } },
         },
         orderBy: { date: 'desc' },
         skip,
@@ -114,16 +118,30 @@ router.get('/', async (req, res, next) => {
 // PATCH /api/transactions/:id
 router.patch('/:id', async (req, res, next) => {
   try {
+    const { id } = req.params
     const body = TransactionPatch.parse(req.body)
+
+    // Update tags if provided (replace all existing tags)
+    if (body.tagIds !== undefined) {
+      await db.transactionTag.deleteMany({ where: { transactionId: id } })
+      if (body.tagIds.length > 0) {
+        await db.transactionTag.createMany({
+          data: body.tagIds.map(tagId => ({ transactionId: id, tagId })),
+        })
+      }
+    }
+
     const transaction = await db.transaction.update({
-      where: { id: req.params.id },
+      where: { id },
       data: {
         ...(body.categoryId !== undefined && { categoryId: body.categoryId }),
         ...(body.expenseType !== undefined && { expenseType: body.expenseType }),
+        ...(body.note !== undefined && { note: body.note }),
         isManual: true, // manual override — won't be overwritten by future merchant propagations
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },
+        tags: { include: { tag: true } },
       },
     })
     res.json(transaction)

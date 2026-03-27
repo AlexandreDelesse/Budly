@@ -63,6 +63,16 @@ export async function importTransactions(filename: string, buffer: Buffer) {
       // P2002 = unique constraint violation → fingerprint duplicate
       if (isPrismaUniqueError(err)) {
         skippedCount++
+        // Store as a candidate for manual review
+        await db.duplicateCandidate.create({
+          data: {
+            fingerprint: row.fingerprint,
+            date: row.date,
+            label: row.label,
+            amount: new Prisma.Decimal(row.amount),
+            importBatchId: batch.id,
+          },
+        })
       } else {
         throw err
       }

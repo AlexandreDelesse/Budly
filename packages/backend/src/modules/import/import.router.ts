@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import multer from 'multer'
+import { Prisma } from '@prisma/client'
 import db from '../../db'
 import { importTransactions } from './import.service'
 
@@ -35,6 +36,9 @@ router.get('/batches', async (_req, res, next) => {
   try {
     const batches = await db.importBatch.findMany({
       orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { duplicates: { where: { status: 'PENDING' } } } },
+      },
     })
     res.json(batches)
   } catch (err) {
@@ -60,6 +64,71 @@ router.get('/batches/:id', async (req, res, next) => {
       return
     }
     res.json(batch)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET /api/import/duplicates?batchId=
+router.get('/duplicates', async (req, res, next) => {
+  try {
+    const { batchId } = req.query as { batchId?: string }
+    const duplicates = await db.duplicateCandidate.findMany({
+      where: {
+        status: 'PENDING',
+        ...(batchId ? { importBatchId: batchId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { importBatch: { select: { filename: true } } },
+    })
+    res.json(duplicates)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/import/duplicates/:id/keep — force-insert as new transaction
+router.post('/duplicates/:id/keep', async (req, res, next) => {
+  try {
+    const duplicate = await db.duplicateCandidate.findUnique({ where: { id: req.params.id } })
+    if (!duplicate) {
+      res.status(404).json({ error: 'Duplicate candidate not found' })
+      return
+    }
+
+    // Force-insert with modified fingerprint to bypass unique constraint
+    const newFingerprint = `${duplicate.fingerprint}-kept-${Date.now()}`
+
+    await db.transaction.create({
+      data: {
+        date: duplicate.date,
+        label: duplicate.label,
+        amount: new Prisma.Decimal(duplicate.amount.toString()),
+        fingerprint: newFingerprint,
+        importBatchId: duplicate.importBatchId,
+        isManual: true,
+      },
+    })
+
+    await db.duplicateCandidate.update({
+      where: { id: req.params.id },
+      data: { status: 'KEPT' },
+    })
+
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/import/duplicates/:id/ignore
+router.post('/duplicates/:id/ignore', async (req, res, next) => {
+  try {
+    const duplicate = await db.duplicateCandidate.update({
+      where: { id: req.params.id },
+      data: { status: 'IGNORED' },
+    })
+    res.json(duplicate)
   } catch (err) {
     next(err)
   }
